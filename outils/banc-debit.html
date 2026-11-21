@@ -177,7 +177,8 @@ async function latency(n = 11){
   let j = 0; for (let i = 1; i < t.length; i++) j += Math.abs(t[i] - t[i - 1]);
   return { ping: median(t), jitter: j / (t.length - 1) };
 }
-async function download(onTick){
+async function download(onTick, rtt){
+  const start = performance.now();
   const r = await fetch(FILE + "?r=" + rnd(), { cache: "no-store" });
   if (!r.ok) throw new Error("HTTP " + r.status);
   if (!r.body || !r.body.getReader){
@@ -185,17 +186,20 @@ async function download(onTick){
     return b.byteLength * 8 / ((performance.now() - s) / 1000) / 1e6;
   }
   const reader = r.body.getReader();
-  let bytes = 0, t0 = null;
+  let bytes = 0, total = 0, t0 = null;
   for (;;){
     const { done, value } = await reader.read();
     if (done) break;
     const now = performance.now();
+    total += value.length;
     if (t0 === null){ t0 = now; continue; }
     bytes += value.length;
     const dt = (now - t0) / 1000;
     if (dt > 0.2) onTick(bytes * 8 / dt / 1e6, bytes);
   }
-  return bytes * 8 / ((performance.now() - t0) / 1000) / 1e6;
+  /* débit sur la durée totale (requête -> dernier octet) moins un aller-retour : robuste aux arrivées en rafale */
+  const dur = Math.max(0.3, (performance.now() - start - (rtt || 0)) / 1000);
+  return total * 8 / dur / 1e6;
 }
 
 function verdictFor(dl){
@@ -217,8 +221,9 @@ $("go").onclick = async () => {
       const v = await download((mbps, bytes) => {
         $("big").innerHTML = fr(mbps) + "<small>Mbit/s</small>";
         $("prog").style.width = (10 + 90 * (i + bytes / 4e6) / RUNS).toFixed(1) + "%";
-      });
+      }, lat.ping);
       speeds.push(v);
+      $("big").innerHTML = fr(v) + "<small>Mbit/s</small>";
     }
     const dl = median(speeds);
     $("big").innerHTML = fr(dl) + "<small>Mbit/s</small>"; $("prog").style.width = "100%";
