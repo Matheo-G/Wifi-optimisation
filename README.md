@@ -73,3 +73,10 @@ Colle le contenu des fichiers `resultats/audit-*.txt` et les relevés B/C dans l
 1. J'analyse et je produis le **rapport d'audit** : problèmes, impact, actions, gain attendu.
 2. On applique les optimisations **une par une, après ta validation**, et on relance le script avec `-Label apres-1`, `apres-2`… pour comparer avant/après.
 3. À la fin, je rédige le rapport récapitulatif : performances avant/après, paramètres modifiés, recommandations.
+
+---
+
+## Banc de débit (suivi de l'évolution)
+Page de test à ouvrir **depuis l'appareil à mesurer** : https://claude.ai/artifact/4HZK9wrbsPYLm2DZH2w9JJ
+Chaque mesure est enregistrée avec sa configuration (répéteur, direct Freebox, après optimisation…) et tracée face au plafond ADSL (≈ 11,8 Mbit/s).
+Source de la page : `outils/banc-debit.html`.
